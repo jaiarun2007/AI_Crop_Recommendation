@@ -86,10 +86,33 @@
       </form>
       <div id="fertilizer-result" class="result"></div>
     </section>
+
+    <section class="card">
+      <h2>6. Irrigation Schedule</h2>
+      <p class="hint">FAO-56 crop-coefficient method (ETc = ET0 &times; Kc) against live rainfall forecast.</p>
+      <form id="irrigation-form">
+        <div class="grid">
+          <label>Crop <input type="text" name="crop" value="rice" required /></label>
+          <label>Growth stage
+            <select name="growth_stage">
+              <option value="initial">initial</option>
+              <option value="development">development</option>
+              <option value="mid_season" selected>mid_season</option>
+              <option value="late_season">late_season</option>
+            </select>
+          </label>
+          <label>Location <input type="text" name="location" value="Coimbatore" required /></label>
+          <label>Days <input type="number" name="days" value="7" min="1" max="16" required /></label>
+          <label>Field size (ha) <input type="number" step="any" name="field_size_ha" value="1" required /></label>
+        </div>
+        <button type="submit">Get Irrigation Schedule</button>
+      </form>
+      <div id="irrigation-result" class="result"></div>
+    </section>
   </main>
 
   <footer>
-    <p>Backend: FastAPI · Crop &amp; yield models: trained on real public datasets (NPK/climate + FAO yield data) · Disease screening: OpenCV colour-heuristic baseline · Weather: live Open-Meteo forecasts · Fertilizer: rule-based N-P-K balancing</p>
+    <p>Backend: FastAPI · Crop &amp; yield models: trained on real public datasets (NPK/climate + FAO yield data) · Disease screening: OpenCV colour-heuristic baseline · Weather: live Open-Meteo forecasts · Fertilizer: rule-based N-P-K balancing · Irrigation: FAO-56 crop-coefficient method</p>
   </footer>
 
   <script src="app.js"></script>

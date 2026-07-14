@@ -153,3 +153,54 @@ class FertilizerResponse(BaseModel):
     nutrients: list[NutrientAdvice]
     ph_advice: PHAdvice
     disclaimer: str
+
+
+# --- Irrigation Recommendation Engine ---
+
+
+class IrrigationRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "crop": "rice",
+                "growth_stage": "mid_season",
+                "location": "Coimbatore",
+                "days": 7,
+                "field_size_ha": 1.0,
+            }
+        }
+    )
+
+    crop: str = Field(..., description="Crop name (see /api/irrigation/known-crops)")
+    growth_stage: str = Field(
+        ..., description="One of: initial, development, mid_season, late_season"
+    )
+    location: str | None = Field(None, description="Place name, e.g. 'Coimbatore'")
+    lat: float | None = None
+    lon: float | None = None
+    days: int = Field(7, ge=1, le=16)
+    field_size_ha: float = Field(1.0, gt=0, le=10000)
+
+
+class IrrigationDayPlan(BaseModel):
+    date: str
+    reference_et0_mm: float
+    crop_coefficient: float
+    crop_water_demand_mm: float
+    rainfall_mm: float
+    irrigation_needed_mm: float
+    irrigation_needed_liters: float
+    action: str
+
+
+class IrrigationResponse(BaseModel):
+    crop: str
+    growth_stage: str
+    crop_coefficient: float
+    field_size_ha: float
+    daily_plan: list[IrrigationDayPlan]
+    total_irrigation_mm: float
+    total_irrigation_liters: float
+    method: str
+    disclaimer: str
+    location: LocationInfo

@@ -8,6 +8,8 @@ const weatherForm = document.getElementById("weather-form");
 const weatherResult = document.getElementById("weather-result");
 const fertilizerForm = document.getElementById("fertilizer-form");
 const fertilizerResult = document.getElementById("fertilizer-result");
+const irrigationForm = document.getElementById("irrigation-form");
+const irrigationResult = document.getElementById("irrigation-result");
 
 function setLoading(el, isLoading) {
   const btn = el.querySelector("button");
@@ -196,5 +198,44 @@ fertilizerForm.addEventListener("submit", async (e) => {
     fertilizerResult.innerHTML = `<p class="error">${err.message}</p>`;
   } finally {
     setLoading(fertilizerForm, false);
+  }
+});
+
+irrigationForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  irrigationResult.innerHTML = "Calculating…";
+  setLoading(irrigationForm, true);
+
+  const formData = new FormData(irrigationForm);
+  const payload = Object.fromEntries(formData.entries());
+  payload.days = Number(payload.days);
+  payload.field_size_ha = Number(payload.field_size_ha);
+
+  try {
+    const res = await fetch("/api/irrigation/schedule", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || "Request failed");
+    const data = await res.json();
+
+    const dayItems = data.daily_plan
+      .map(
+        (d) =>
+          `<li><span>${d.date}: ${d.action}</span><span>${d.irrigation_needed_mm}mm (demand ${d.crop_water_demand_mm}mm, rain ${d.rainfall_mm}mm)</span></li>`
+      )
+      .join("");
+
+    irrigationResult.innerHTML = `
+      <div class="result-box">
+        <strong>Total: ${data.total_irrigation_mm}mm over ${data.daily_plan.length} days (${data.total_irrigation_liters.toLocaleString()} L for ${data.field_size_ha}ha)</strong>
+        <ul class="alt-list" style="display:block">${dayItems}</ul>
+        <p class="hint">${data.method} · ${data.disclaimer}</p>
+      </div>`;
+  } catch (err) {
+    irrigationResult.innerHTML = `<p class="error">${err.message}</p>`;
+  } finally {
+    setLoading(irrigationForm, false);
   }
 });

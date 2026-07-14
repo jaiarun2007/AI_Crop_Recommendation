@@ -11,6 +11,10 @@ Executive Summary and Production Blueprint deck:
    region, crop, year, rainfall, pesticide use, and temperature.
 4. **Weather Intelligence** — live forecasts + rule-based agro-alerts (heatwave, heavy rain,
    high wind, dry-spell risk) from the free Open-Meteo API.
+5. **Fertilizer Recommendation** — N-P-K balancing against per-crop ideal nutrient targets,
+   with real fertilizer-product dosing (Urea/SSP/MOP).
+6. **Irrigation Scheduling** — the FAO-56 crop-coefficient method (ETc = ET0 × Kc) against
+   live rainfall forecast, producing a day-by-day irrigation plan.
 
 A minimal web front-end calls all of these APIs so the whole thing is demoable in a browser.
 
@@ -50,6 +54,17 @@ would misrepresent the work.
   Open-Meteo's real documented response schema, to verify parsing/alert logic deterministically.
   **Do a live check** in an environment with normal internet access before the demo:
   `curl "https://api.open-meteo.com/v1/forecast?latitude=11.0168&longitude=76.9558&daily=temperature_2m_max&timezone=auto"`.
+- **Fertilizer recommendation is a genuine rule-based engine**, not a lookup table of canned
+  answers: it computes real N-P-K deficits against per-crop reference targets and converts them
+  to product doses using standard fertilizer nutrient-content percentages. See the disclaimer
+  in its own response — it is a simplified elemental balance, not a certified prescription.
+- **Irrigation scheduling uses the FAO-56 crop-coefficient method** (`ETc = ET0 × Kc`), the
+  globally standard approach for estimating crop water demand, with published Kc values (FAO
+  Irrigation & Drainage Paper 56, Table 12) and *live* ET0/rainfall pulled from the weather
+  service above — so it inherits the same sandbox network caveat as Weather Intelligence. Its
+  pure-math logic (`test_irrigation_service.py`) is verified directly against example inputs, no
+  network involved; its API-composition logic (`test_irrigation_api.py`) mocks the weather
+  transport the same way the weather tests do.
 
 ## Project layout
 
@@ -64,12 +79,14 @@ backend/
     routers/yield_.py          POST /api/yield/predict, GET /api/yield/known-values
     routers/weather.py         GET /api/weather/forecast, GET /api/weather/alerts
     routers/fertilizer.py      POST /api/fertilizer/recommend, GET /api/fertilizer/known-crops
+    routers/irrigation.py      POST /api/irrigation/schedule, GET /api/irrigation/known-crops
     services/crop_recommender.py
     services/disease_detector.py
     services/yield_predictor.py
     services/weather_client.py     Raw Open-Meteo HTTP calls
     services/weather_service.py    Forecast parsing + alert-threshold logic
     services/fertilizer_service.py N-P-K balancing against per-crop ideal targets
+    services/irrigation_service.py FAO-56 ETc calculation + irrigation-plan logic
   ml/
     train_crop_model.py        Trains + compares RF/XGBoost/LightGBM, saves the best
     train_yield_model.py       Trains + compares RF/XGBoost regressors, saves the best
@@ -83,6 +100,8 @@ backend/
     test_yield_api.py
     test_weather_api.py
     test_fertilizer_api.py
+    test_irrigation_service.py
+    test_irrigation_api.py
 frontend/
   index.html / app.js / styles.css   Minimal UI calling all endpoints
 scripts/run_dev.sh              One-command local run
@@ -228,11 +247,37 @@ useful for populating a dropdown instead of free-text input.
 
 `GET /api/fertilizer/known-crops` lists the 22 crops with reference nutrient targets.
 
+### `POST /api/irrigation/schedule`
+
+```json
+{"crop": "rice", "growth_stage": "mid_season", "location": "Coimbatore", "days": 7, "field_size_ha": 1.0}
+```
+
+→
+
+```json
+{
+  "crop": "rice", "growth_stage": "mid_season", "crop_coefficient": 1.2, "field_size_ha": 1.0,
+  "daily_plan": [
+    {"date": "2026-07-15", "reference_et0_mm": 5.0, "crop_coefficient": 1.2,
+     "crop_water_demand_mm": 6.0, "rainfall_mm": 0.0, "irrigation_needed_mm": 6.0,
+     "irrigation_needed_liters": 60000.0, "action": "irrigate"}
+  ],
+  "total_irrigation_mm": 6.0, "total_irrigation_liters": 60000.0,
+  "method": "FAO-56 single crop coefficient (ETc = ET0 x Kc)",
+  "disclaimer": "Assumes irrigation_mm = max(0, ETc - rainfall) per day with no carry-over...",
+  "location": {"name": "Coimbatore", "country": "India", "latitude": 11.0168, "longitude": 76.9558}
+}
+```
+
+`GET /api/irrigation/known-crops` lists the 23 crops with published Kc values and the 4 valid
+`growth_stage` values.
+
 ## Relationship to the full platform vision
 
 This repo is a focused slice of the much larger microservices platform described in
-`Executive_Summary_2.pdf` (10+ services: auth, soil health, irrigation engine, a multilingual
-RAG assistant, Kubernetes deployment, etc.). Building all of that is a multi-week/production
-effort; this prototype exists to give the team something real and runnable to demo today.
-Remaining slices, in priority order: irrigation engine, RAG assistant, auth, and Docker/Kubernetes
+`Executive_Summary_2.pdf` (10+ services: auth, soil health, a multilingual RAG assistant,
+Kubernetes deployment, etc.). Building all of that is a multi-week/production effort; this
+prototype exists to give the team something real and runnable to demo today. Remaining slices,
+in priority order: RAG assistant (over the project's own documents), auth, and Docker/Kubernetes
 deployment manifests.
