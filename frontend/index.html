@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Crop Recommendation &amp; Farming Assistant — Demo</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <h1>🌾 AI-Based Crop Recommendation &amp; Climate-Adaptive Farming Assistant</h1>
+    <p class="subtitle">Demo prototype — crop recommendation model + leaf health screening</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>1. Crop Recommendation</h2>
+      <p class="hint">Enter soil nutrients and climate readings to get the top recommended crops.</p>
+      <form id="crop-form">
+        <div class="grid">
+          <label>Nitrogen (N, kg/ha) <input type="number" step="any" name="N" value="90" required /></label>
+          <label>Phosphorus (P, kg/ha) <input type="number" step="any" name="P" value="42" required /></label>
+          <label>Potassium (K, kg/ha) <input type="number" step="any" name="K" value="43" required /></label>
+          <label>Temperature (°C) <input type="number" step="any" name="temperature" value="20.9" required /></label>
+          <label>Humidity (%) <input type="number" step="any" name="humidity" value="82" required /></label>
+          <label>Soil pH <input type="number" step="any" name="ph" value="6.5" required /></label>
+          <label>Rainfall (mm) <input type="number" step="any" name="rainfall" value="203" required /></label>
+        </div>
+        <button type="submit">Get Recommendation</button>
+      </form>
+      <div id="crop-result" class="result"></div>
+    </section>
+
+    <section class="card">
+      <h2>2. Leaf Disease Screening</h2>
+      <p class="hint">Upload a leaf photo to screen for visible discoloration/lesions.</p>
+      <form id="disease-form">
+        <input type="file" name="file" accept="image/png, image/jpeg, image/webp" required />
+        <button type="submit">Analyze Leaf</button>
+      </form>
+      <div id="disease-result" class="result"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Backend: FastAPI · Crop model: trained on 2,200-sample NPK/climate dataset (22 crops) · Disease screening: OpenCV colour-heuristic baseline</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
