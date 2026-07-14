@@ -15,6 +15,8 @@ Executive Summary and Production Blueprint deck:
    with real fertilizer-product dosing (Urea/SSP/MOP).
 6. **Irrigation Scheduling** — the FAO-56 crop-coefficient method (ETc = ET0 × Kc) against
    live rainfall forecast, producing a day-by-day irrigation plan.
+7. **AI Assistant (RAG)** — retrieval-augmented Q&A grounded in the team's own project
+   documents (Executive Summary, finalist guidelines, presentation deck, pitch strategy).
 
 A minimal web front-end calls all of these APIs so the whole thing is demoable in a browser.
 
@@ -65,6 +67,27 @@ would misrepresent the work.
   pure-math logic (`test_irrigation_service.py`) is verified directly against example inputs, no
   network involved; its API-composition logic (`test_irrigation_api.py`) mocks the weather
   transport the same way the weather tests do.
+- **The AI Assistant does real retrieval, not canned Q&A.** The project's own documents are
+  materialized as Markdown files under `backend/app/knowledge_base/`, split into heading-level
+  sections, and indexed with TF-IDF (scikit-learn) — a real, deterministic information-retrieval
+  technique, computed locally with no external embedding-model download. By default it answers
+  *extractively* (returns the actual matching document text verbatim, with a similarity score
+  and source citation) — there is no hallucination risk because every word comes from a real
+  project document. If an `ANTHROPIC_API_KEY` environment variable is set, it will instead call
+  a real Claude model to synthesize a natural-language answer, explicitly instructed to use only
+  the retrieved context — this is optional and the response always reports which `mode` actually
+  produced the answer (`"extractive"` or `"llm"`) so nothing is misrepresented.
+
+  **Knowledge-base curation note:** one of the four source documents you uploaded
+  (`AI_Farming_Assistant_Finalist_Presentation_Prep.pdf`) contained hyper-specific claims
+  — named individuals, a student register number, funding figures, MoU partner names, lab
+  equipment pricing — that don't cross-verify against the team's other documents and read as
+  likely AI-generated embellishment (the source PDF also contained literal broken citation
+  artifacts like `[user_query]`). Rather than index that document verbatim and risk the
+  assistant confidently repeating unverified specifics as fact, `pitch_strategy.md` in the
+  knowledge base is a **curated** version keeping only the architecture/tech-stack table and
+  general pitch-structure guidance from that source, with an explicit note in the file itself
+  about what was omitted and why.
 
 ## Project layout
 
@@ -80,6 +103,7 @@ backend/
     routers/weather.py         GET /api/weather/forecast, GET /api/weather/alerts
     routers/fertilizer.py      POST /api/fertilizer/recommend, GET /api/fertilizer/known-crops
     routers/irrigation.py      POST /api/irrigation/schedule, GET /api/irrigation/known-crops
+    routers/assistant.py       POST /api/assistant/query, GET /api/assistant/documents
     services/crop_recommender.py
     services/disease_detector.py
     services/yield_predictor.py
@@ -87,6 +111,8 @@ backend/
     services/weather_service.py    Forecast parsing + alert-threshold logic
     services/fertilizer_service.py N-P-K balancing against per-crop ideal targets
     services/irrigation_service.py FAO-56 ETc calculation + irrigation-plan logic
+    services/rag_service.py        TF-IDF retrieval + optional LLM synthesis
+    knowledge_base/*.md        Materialized project documents (the RAG corpus)
   ml/
     train_crop_model.py        Trains + compares RF/XGBoost/LightGBM, saves the best
     train_yield_model.py       Trains + compares RF/XGBoost regressors, saves the best
@@ -102,6 +128,7 @@ backend/
     test_fertilizer_api.py
     test_irrigation_service.py
     test_irrigation_api.py
+    test_assistant_api.py
 frontend/
   index.html / app.js / styles.css   Minimal UI calling all endpoints
 scripts/run_dev.sh              One-command local run
@@ -273,11 +300,32 @@ useful for populating a dropdown instead of free-text input.
 `GET /api/irrigation/known-crops` lists the 23 crops with published Kc values and the 4 valid
 `growth_stage` values.
 
+### `POST /api/assistant/query`
+
+```json
+{"question": "What model is used for disease detection?", "top_k": 3}
+```
+
+→
+
+```json
+{
+  "answer": "From \"executive_summary\" > Disease Detection Model: Approach: YOLOv8 (or later) real-time object detection...",
+  "mode": "extractive",
+  "sources": [
+    {"document": "executive_summary", "heading": "Disease Detection Model", "text": "...", "score": 0.41}
+  ]
+}
+```
+
+Set `ANTHROPIC_API_KEY` in the environment to switch `mode` to `"llm"` (falls back to
+extractive automatically if the key is absent or the call fails). `GET /api/assistant/documents`
+lists the four indexed source documents.
+
 ## Relationship to the full platform vision
 
 This repo is a focused slice of the much larger microservices platform described in
-`Executive_Summary_2.pdf` (10+ services: auth, soil health, a multilingual RAG assistant,
-Kubernetes deployment, etc.). Building all of that is a multi-week/production effort; this
-prototype exists to give the team something real and runnable to demo today. Remaining slices,
-in priority order: RAG assistant (over the project's own documents), auth, and Docker/Kubernetes
-deployment manifests.
+`Executive_Summary_2.pdf` (10+ services: auth, soil health, Kubernetes deployment, etc.).
+Building all of that is a multi-week/production effort; this prototype exists to give the team
+something real and runnable to demo today. Remaining slices, in priority order: user
+authentication (JWT), and Docker/Kubernetes deployment manifests.

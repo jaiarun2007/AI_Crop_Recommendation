@@ -10,6 +10,8 @@ const fertilizerForm = document.getElementById("fertilizer-form");
 const fertilizerResult = document.getElementById("fertilizer-result");
 const irrigationForm = document.getElementById("irrigation-form");
 const irrigationResult = document.getElementById("irrigation-result");
+const assistantForm = document.getElementById("assistant-form");
+const assistantResult = document.getElementById("assistant-result");
 
 function setLoading(el, isLoading) {
   const btn = el.querySelector("button");
@@ -237,5 +239,39 @@ irrigationForm.addEventListener("submit", async (e) => {
     irrigationResult.innerHTML = `<p class="error">${err.message}</p>`;
   } finally {
     setLoading(irrigationForm, false);
+  }
+});
+
+assistantForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  assistantResult.innerHTML = "Thinking…";
+  setLoading(assistantForm, true);
+
+  const formData = new FormData(assistantForm);
+  const payload = { question: formData.get("question"), top_k: 3 };
+
+  try {
+    const res = await fetch("/api/assistant/query", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || "Request failed");
+    const data = await res.json();
+
+    const sourceItems = data.sources
+      .map((s) => `<li>${s.document} &gt; ${s.heading} (score ${s.score})</li>`)
+      .join("");
+
+    assistantResult.innerHTML = `
+      <div class="result-box">
+        <p>${data.answer}</p>
+        <p class="hint">Mode: ${data.mode}</p>
+        ${sourceItems ? `<ul class="alt-list" style="display:block">${sourceItems}</ul>` : ""}
+      </div>`;
+  } catch (err) {
+    assistantResult.innerHTML = `<p class="error">${err.message}</p>`;
+  } finally {
+    setLoading(assistantForm, false);
   }
 });

@@ -204,3 +204,30 @@ class IrrigationResponse(BaseModel):
     method: str
     disclaimer: str
     location: LocationInfo
+
+
+# --- AI RAG Assistant ---
+
+
+class AssistantQueryRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"question": "What model is used for disease detection?", "top_k": 3}
+        }
+    )
+
+    question: str = Field(..., min_length=3, max_length=500)
+    top_k: int = Field(3, ge=1, le=10)
+
+
+class AssistantSource(BaseModel):
+    document: str
+    heading: str
+    text: str
+    score: float
+
+
+class AssistantQueryResponse(BaseModel):
+    answer: str
+    mode: str
+    sources: list[AssistantSource]

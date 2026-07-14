@@ -109,10 +109,22 @@
       </form>
       <div id="irrigation-result" class="result"></div>
     </section>
+
+    <section class="card">
+      <h2>7. Ask the Project Assistant</h2>
+      <p class="hint">Retrieval-augmented Q&amp;A grounded in the team's own project documents (extractive by default; uses a real LLM if ANTHROPIC_API_KEY is configured).</p>
+      <form id="assistant-form">
+        <label>Question
+          <input type="text" name="question" placeholder="e.g. What model is used for disease detection?" required minlength="3" />
+        </label>
+        <button type="submit">Ask</button>
+      </form>
+      <div id="assistant-result" class="result"></div>
+    </section>
   </main>
 
   <footer>
-    <p>Backend: FastAPI · Crop &amp; yield models: trained on real public datasets (NPK/climate + FAO yield data) · Disease screening: OpenCV colour-heuristic baseline · Weather: live Open-Meteo forecasts · Fertilizer: rule-based N-P-K balancing · Irrigation: FAO-56 crop-coefficient method</p>
+    <p>Backend: FastAPI · Crop &amp; yield models: trained on real public datasets (NPK/climate + FAO yield data) · Disease screening: OpenCV colour-heuristic baseline · Weather: live Open-Meteo forecasts · Fertilizer: rule-based N-P-K balancing · Irrigation: FAO-56 crop-coefficient method · Assistant: TF-IDF RAG over project docs</p>
   </footer>
 
   <script src="app.js"></script>
