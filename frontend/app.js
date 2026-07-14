@@ -2,6 +2,8 @@ const cropForm = document.getElementById("crop-form");
 const cropResult = document.getElementById("crop-result");
 const diseaseForm = document.getElementById("disease-form");
 const diseaseResult = document.getElementById("disease-result");
+const yieldForm = document.getElementById("yield-form");
+const yieldResult = document.getElementById("yield-result");
 
 function setLoading(el, isLoading) {
   const btn = el.querySelector("button");
@@ -73,5 +75,44 @@ diseaseForm.addEventListener("submit", async (e) => {
     diseaseResult.innerHTML = `<p class="error">${err.message}</p>`;
   } finally {
     setLoading(diseaseForm, false);
+  }
+});
+
+yieldForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  yieldResult.innerHTML = "Predicting…";
+  setLoading(yieldForm, true);
+
+  const formData = new FormData(yieldForm);
+  const payload = Object.fromEntries(formData.entries());
+  payload.Year = Number(payload.Year);
+  payload.average_rain_fall_mm_per_year = Number(payload.average_rain_fall_mm_per_year);
+  payload.pesticides_tonnes = Number(payload.pesticides_tonnes);
+  payload.avg_temp = Number(payload.avg_temp);
+
+  try {
+    const res = await fetch("/api/yield/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || "Request failed");
+    const data = await res.json();
+
+    const warnings = data.warnings.length
+      ? `<p class="hint">⚠ ${data.warnings.join(" ")}</p>`
+      : "";
+
+    yieldResult.innerHTML = `
+      <div class="result-box">
+        <strong>Predicted yield: ${data.predicted_yield_tonnes_per_ha} tonnes/ha</strong>
+        (${data.predicted_yield_kg_per_ha} kg/ha)
+        <p class="hint">Model: ${data.model_used} (R² = ${data.model_r2})</p>
+        ${warnings}
+      </div>`;
+  } catch (err) {
+    yieldResult.innerHTML = `<p class="error">${err.message}</p>`;
+  } finally {
+    setLoading(yieldForm, false);
   }
 });

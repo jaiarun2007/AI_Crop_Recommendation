@@ -43,3 +43,33 @@ class DiseaseDetectionResponse(BaseModel):
     confidence: float
     message: str
     method: str
+
+
+class YieldPredictionInput(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "Area": "India",
+                "Item": "Rice, paddy",
+                "Year": 2013,
+                "average_rain_fall_mm_per_year": 1083.0,
+                "pesticides_tonnes": 46765.0,
+                "avg_temp": 24.5,
+            }
+        }
+    )
+
+    Area: str = Field(..., description="Country/region name (e.g. 'India')")
+    Item: str = Field(..., description="Crop name as used in FAO data (e.g. 'Rice, paddy')")
+    Year: int = Field(..., ge=1900, le=2100)
+    average_rain_fall_mm_per_year: float = Field(..., ge=0, le=10000)
+    pesticides_tonnes: float = Field(..., ge=0)
+    avg_temp: float = Field(..., ge=-30, le=60)
+
+
+class YieldPredictionResponse(BaseModel):
+    predicted_yield_kg_per_ha: float
+    predicted_yield_tonnes_per_ha: float
+    model_used: str
+    model_r2: float
+    warnings: list[str]

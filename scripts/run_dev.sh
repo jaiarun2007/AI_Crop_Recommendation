@@ -5,4 +5,8 @@ if [ ! -f ml/models/crop_model.joblib ]; then
   echo "Training crop model (first run)..."
   python3 ml/train_crop_model.py
 fi
+if [ ! -f ml/models/yield_model.joblib ]; then
+  echo "Training yield model (first run)..."
+  python3 ml/train_yield_model.py
+fi
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
