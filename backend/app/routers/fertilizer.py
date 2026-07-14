@@ -6,7 +6,11 @@ from app.services import fertilizer_service
 router = APIRouter(prefix="/api/fertilizer", tags=["fertilizer-engine"])
 
 
-@router.post("/recommend", response_model=FertilizerResponse)
+@router.post(
+    "/recommend",
+    response_model=FertilizerResponse,
+    summary="N-P-K balancing advice + product dosing for a crop's soil test",
+)
 def recommend_fertilizer(payload: FertilizerRequest):
     try:
         return fertilizer_service.recommend(payload.crop, payload.N, payload.P, payload.K, payload.ph)
@@ -18,6 +22,6 @@ def recommend_fertilizer(payload: FertilizerRequest):
         )
 
 
-@router.get("/known-crops")
+@router.get("/known-crops", summary="List crops with reference nutrient targets")
 def known_crops():
     return {"crops": fertilizer_service.known_crops()}

@@ -6,7 +6,11 @@ from app.services.crop_recommender import get_recommender
 router = APIRouter(prefix="/api/crop", tags=["crop-recommendation"])
 
 
-@router.post("/recommend", response_model=CropRecommendationResponse)
+@router.post(
+    "/recommend",
+    response_model=CropRecommendationResponse,
+    summary="Recommend the best crop for given soil/climate readings",
+)
 def recommend_crop(payload: SoilClimateInput):
     recommender = get_recommender()
     result = recommender.predict(payload.model_dump())

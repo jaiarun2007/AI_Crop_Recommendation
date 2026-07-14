@@ -31,6 +31,8 @@ class CropPrediction(BaseModel):
 
 
 class CropRecommendationResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     top_recommendation: str
     confidence: float
     alternatives: list[CropPrediction]
@@ -68,6 +70,8 @@ class YieldPredictionInput(BaseModel):
 
 
 class YieldPredictionResponse(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     predicted_yield_kg_per_ha: float
     predicted_yield_tonnes_per_ha: float
     model_used: str

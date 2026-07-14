@@ -24,7 +24,12 @@ def get_current_user(
     return user
 
 
-@router.post("/register", response_model=TokenResponse, status_code=201)
+@router.post(
+    "/register",
+    response_model=TokenResponse,
+    status_code=201,
+    summary="Create an account (bcrypt-hashed password) and return a JWT",
+)
 def register(payload: UserRegisterRequest, db: Session = Depends(get_db)):
     if auth_service.get_user_by_email(db, payload.email):
         raise HTTPException(status_code=409, detail="An account with this email already exists")
@@ -34,7 +39,7 @@ def register(payload: UserRegisterRequest, db: Session = Depends(get_db)):
     return {"access_token": token, "user": user}
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponse, summary="Exchange email/password for a JWT")
 def login(payload: UserLoginRequest, db: Session = Depends(get_db)):
     user = auth_service.authenticate_user(db, payload.email, payload.password)
     if not user:
@@ -44,6 +49,6 @@ def login(payload: UserLoginRequest, db: Session = Depends(get_db)):
     return {"access_token": token, "user": user}
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", response_model=UserResponse, summary="Get the current authenticated user")
 def read_current_user(current_user: User = Depends(get_current_user)):
     return current_user

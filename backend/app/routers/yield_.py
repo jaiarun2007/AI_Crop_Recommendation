@@ -6,14 +6,18 @@ from app.services.yield_predictor import get_predictor
 router = APIRouter(prefix="/api/yield", tags=["yield-prediction"])
 
 
-@router.post("/predict", response_model=YieldPredictionResponse)
+@router.post(
+    "/predict",
+    response_model=YieldPredictionResponse,
+    summary="Predict crop yield for a region/crop/year given rainfall, pesticide use, temperature",
+)
 def predict_yield(payload: YieldPredictionInput):
     predictor = get_predictor()
     result = predictor.predict(payload.model_dump())
     return result
 
 
-@router.get("/known-values")
+@router.get("/known-values", summary="List countries/crops seen during training")
 def known_values():
     predictor = get_predictor()
     return {

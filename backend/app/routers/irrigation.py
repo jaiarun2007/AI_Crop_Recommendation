@@ -7,7 +7,11 @@ from app.services.weather_client import WeatherAPIError
 router = APIRouter(prefix="/api/irrigation", tags=["irrigation-engine"])
 
 
-@router.post("/schedule", response_model=IrrigationResponse)
+@router.post(
+    "/schedule",
+    response_model=IrrigationResponse,
+    summary="FAO-56 crop-coefficient irrigation plan against live rainfall forecast",
+)
 def irrigation_schedule(payload: IrrigationRequest):
     if not payload.location and (payload.lat is None or payload.lon is None):
         raise HTTPException(status_code=400, detail="Provide `location` or both `lat` and `lon`.")
@@ -41,6 +45,6 @@ def irrigation_schedule(payload: IrrigationRequest):
     return plan
 
 
-@router.get("/known-crops")
+@router.get("/known-crops", summary="List crops with published Kc values and valid growth stages")
 def known_crops():
     return {"crops": irrigation_service.known_crops(), "growth_stages": irrigation_service.GROWTH_STAGES}

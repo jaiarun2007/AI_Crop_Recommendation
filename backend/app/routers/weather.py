@@ -7,7 +7,11 @@ from app.services.weather_client import WeatherAPIError
 router = APIRouter(prefix="/api/weather", tags=["weather-intelligence"])
 
 
-@router.get("/forecast", response_model=WeatherForecastResponse)
+@router.get(
+    "/forecast",
+    response_model=WeatherForecastResponse,
+    summary="Live daily forecast (temp, rain, humidity, wind, ET0) from Open-Meteo",
+)
 def get_forecast(
     location: str | None = Query(None, description="Place name, e.g. 'Coimbatore'"),
     lat: float | None = Query(None),
@@ -24,7 +28,11 @@ def get_forecast(
         raise HTTPException(status_code=400, detail=str(exc))
 
 
-@router.get("/alerts", response_model=WeatherAlertsResponse)
+@router.get(
+    "/alerts",
+    response_model=WeatherAlertsResponse,
+    summary="IMD-style agro-alerts (heatwave, heavy rain, high wind, dry spell)",
+)
 def get_alerts(
     location: str | None = Query(None, description="Place name, e.g. 'Coimbatore'"),
     lat: float | None = Query(None),

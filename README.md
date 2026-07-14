@@ -22,6 +22,30 @@ Executive Summary and Production Blueprint deck:
 
 A minimal web front-end calls all of these APIs so the whole thing is demoable in a browser.
 
+## Endpoint reference
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/api/crop/recommend` | Recommend the best crop for given soil/climate readings |
+| POST | `/api/disease/detect` | Screen a leaf photo for visible discoloration/lesions |
+| POST | `/api/yield/predict` | Predict crop yield for a region/crop/year |
+| GET | `/api/yield/known-values` | List countries/crops seen during training |
+| GET | `/api/weather/forecast` | Live daily forecast from Open-Meteo |
+| GET | `/api/weather/alerts` | IMD-style agro-alerts |
+| POST | `/api/fertilizer/recommend` | N-P-K balancing + product dosing |
+| GET | `/api/fertilizer/known-crops` | List crops with reference nutrient targets |
+| POST | `/api/irrigation/schedule` | FAO-56 crop-coefficient irrigation plan |
+| GET | `/api/irrigation/known-crops` | List crops with Kc values + growth stages |
+| POST | `/api/assistant/query` | RAG Q&A over the project's own documents |
+| GET | `/api/assistant/documents` | List indexed source documents |
+| POST | `/api/auth/register` | Create an account, returns a JWT |
+| POST | `/api/auth/login` | Exchange credentials for a JWT |
+| GET | `/api/auth/me` | Get the current authenticated user |
+| GET | `/api/health` | Liveness check |
+
+Full interactive docs (Swagger UI, generated from the same schemas/summaries) are always at
+`/docs` when the server is running; a machine-readable OpenAPI spec is at `/openapi.json`.
+
 ## What's real vs. a documented baseline
 
 - **Crop recommendation model is genuinely trained**, not mocked: RandomForest, XGBoost, and
@@ -170,6 +194,24 @@ If the model artifacts are missing, `run_dev.sh` retrains them automatically
 cd backend
 python3 -m pytest tests/ -v
 ```
+
+## Production-readiness verification
+
+Every module in this repo was, at the point it was added: run against its own tests, started as
+a live server, and exercised with real `curl` requests (not just unit tests) before being
+committed — see each module's commit message for the specific checks performed.
+
+Beyond that, this codebase was verified in a **clean-room environment**: a fresh virtualenv with
+*only* `pip install -r requirements.txt` (no packages inherited from the ambient dev sandbox),
+running the full test suite and a full live end-to-end smoke test of all 8 modules together. That
+process caught and fixed a real bug: the committed `crop_model.joblib`/`yield_model.joblib` had
+been trained with a newer scikit-learn than the version pinned in `requirements.txt`, which
+silently produced a **wrong (negative) yield prediction** under the pinned version — a classic
+"works on my machine" class of bug that unit tests alone (run in the same environment they were
+trained in) would not have caught. Both models were retrained inside the clean virtualenv so the
+committed artifacts now match the pinned dependency versions exactly. If you upgrade
+`scikit-learn`/`xgboost` in `requirements.txt`, re-run `train_crop_model.py`/`train_yield_model.py`
+in that same upgraded environment before committing new model artifacts.
 
 ## API reference
 

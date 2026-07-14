@@ -9,7 +9,11 @@ ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 
 
-@router.post("/detect", response_model=DiseaseDetectionResponse)
+@router.post(
+    "/detect",
+    response_model=DiseaseDetectionResponse,
+    summary="Screen a leaf photo for visible discoloration/lesions (OpenCV heuristic)",
+)
 async def detect_disease(file: UploadFile = File(...)):
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(status_code=400, detail="Upload a JPEG, PNG, or WEBP image.")
