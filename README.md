@@ -1,7 +1,7 @@
 # AI-Based Crop Recommendation & Climate-Adaptive Farming Assistant — Demo Prototype
 
 A working prototype built for the AI for Social Impact Challenge 2026 pitch. It implements
-three of the platform's core services end-to-end, matching the specs from the project's
+several of the platform's core services end-to-end, matching the specs from the project's
 Executive Summary and Production Blueprint deck:
 
 1. **Crop Recommendation** — a trained ML classifier that suggests the best crop given soil
@@ -9,8 +9,10 @@ Executive Summary and Production Blueprint deck:
 2. **Leaf Disease Screening** — an image-upload endpoint that flags visible leaf discoloration.
 3. **Yield Prediction** — a trained regressor that estimates crop yield (tonnes/ha) given
    region, crop, year, rainfall, pesticide use, and temperature.
+4. **Weather Intelligence** — live forecasts + rule-based agro-alerts (heatwave, heavy rain,
+   high wind, dry-spell risk) from the free Open-Meteo API.
 
-A minimal web front-end calls all three APIs so the whole thing is demoable in a browser.
+A minimal web front-end calls all of these APIs so the whole thing is demoable in a browser.
 
 ## What's real vs. a documented baseline
 
@@ -36,19 +38,36 @@ A minimal web front-end calls all three APIs so the whole thing is demoable in a
 Be upfront about this distinction if asked by judges — claiming the heuristic is a trained CNN
 would misrepresent the work.
 
+- **Weather Intelligence calls a real, free, public API (Open-Meteo, no key required)** — no
+  synthetic weather data. `backend/app/services/weather_client.py` makes real HTTP calls; if the
+  upstream API is unreachable or errors, the endpoint returns a `502` with the real error message
+  rather than inventing a forecast. Alert thresholds (heatwave, heavy-rain bands, high wind,
+  dry-spell) follow published IMD (India Meteorological Department) classification bands, not
+  arbitrary numbers — see the docstring in `weather_service.py`.
+  **Note:** this was developed in a sandboxed build environment whose outbound network is
+  restricted to GitHub/package registries — Open-Meteo itself could not be reached from inside
+  that sandbox. The weather module's tests mock the HTTP transport layer with a fixture matching
+  Open-Meteo's real documented response schema, to verify parsing/alert logic deterministically.
+  **Do a live check** in an environment with normal internet access before the demo:
+  `curl "https://api.open-meteo.com/v1/forecast?latitude=11.0168&longitude=76.9558&daily=temperature_2m_max&timezone=auto"`.
+
 ## Project layout
 
 ```
 backend/
   app/
     main.py                    FastAPI app (mounts routers + serves the frontend)
+    config.py                  Central settings (API URLs, JWT secret, DB URL; env-overridable)
     schemas.py                 Pydantic request/response models
     routers/crop.py            POST /api/crop/recommend
     routers/disease.py         POST /api/disease/detect
     routers/yield_.py          POST /api/yield/predict, GET /api/yield/known-values
+    routers/weather.py         GET /api/weather/forecast, GET /api/weather/alerts
     services/crop_recommender.py
     services/disease_detector.py
     services/yield_predictor.py
+    services/weather_client.py     Raw Open-Meteo HTTP calls
+    services/weather_service.py    Forecast parsing + alert-threshold logic
   ml/
     train_crop_model.py        Trains + compares RF/XGBoost/LightGBM, saves the best
     train_yield_model.py       Trains + compares RF/XGBoost regressors, saves the best
@@ -59,8 +78,9 @@ backend/
     test_crop_api.py
     test_disease_api.py
     test_yield_api.py
+    test_weather_api.py
 frontend/
-  index.html / app.js / styles.css   Minimal UI calling all three endpoints
+  index.html / app.js / styles.css   Minimal UI calling all endpoints
 scripts/run_dev.sh              One-command local run
 ```
 
@@ -151,11 +171,39 @@ Multipart form upload, field name `file` (JPEG/PNG/WEBP, max 8MB) →
 `GET /api/yield/known-values` lists the 101 countries and 10 crop types seen during training —
 useful for populating a dropdown instead of free-text input.
 
+### `GET /api/weather/forecast?location=Coimbatore&days=7`
+
+(or `?lat=11.0168&lon=76.9558&days=7`) →
+
+```json
+{
+  "location": {"name": "Coimbatore", "country": "India", "latitude": 11.0168, "longitude": 76.9558},
+  "timezone": "Asia/Kolkata",
+  "daily": [
+    {"date": "2026-07-15", "temp_max_c": 32.0, "temp_min_c": 24.0, "precipitation_mm": 2.0,
+     "precipitation_probability_percent": 10, "humidity_percent": 65, "wind_speed_max_kmh": 12.0,
+     "reference_et0_mm": 4.1}
+  ]
+}
+```
+
+### `GET /api/weather/alerts?location=Coimbatore&days=7`
+
+```json
+{
+  "location": {"name": "Coimbatore", "country": "India", "latitude": 11.0168, "longitude": 76.9558},
+  "alerts": [
+    {"date": "2026-07-16", "type": "heatwave", "severity": "medium",
+     "message": "Heatwave conditions: forecast max 41.0C."}
+  ]
+}
+```
+
 ## Relationship to the full platform vision
 
 This repo is a focused slice of the much larger microservices platform described in
-`Executive_Summary_2.pdf` (10+ services: auth, weather intelligence, soil health,
-fertilizer/irrigation engines, a multilingual RAG assistant, Kubernetes deployment, etc.).
-Building all of that is a multi-week/production effort; this prototype exists to give the team
-something real and runnable to demo today. Natural next slices, roughly in priority order:
-weather-alert integration, then the fertilizer/irrigation engines.
+`Executive_Summary_2.pdf` (10+ services: auth, soil health, fertilizer/irrigation engines, a
+multilingual RAG assistant, Kubernetes deployment, etc.). Building all of that is a
+multi-week/production effort; this prototype exists to give the team something real and runnable
+to demo today. Remaining slices, in priority order: fertilizer engine, irrigation engine, RAG
+assistant, auth, and Docker/Kubernetes deployment manifests.

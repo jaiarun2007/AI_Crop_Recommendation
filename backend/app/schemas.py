@@ -73,3 +73,44 @@ class YieldPredictionResponse(BaseModel):
     model_used: str
     model_r2: float
     warnings: list[str]
+
+
+# --- Weather Intelligence ---
+
+
+class LocationInfo(BaseModel):
+    name: str
+    country: str | None = None
+    latitude: float
+    longitude: float
+
+
+class DailyForecast(BaseModel):
+    date: str
+    temp_max_c: float
+    temp_min_c: float
+    precipitation_mm: float
+    precipitation_probability_percent: float | None = None
+    humidity_percent: float | None = None
+    wind_speed_max_kmh: float
+    reference_et0_mm: float | None = Field(
+        None, description="FAO reference evapotranspiration (ET0), used by the irrigation engine"
+    )
+
+
+class WeatherAlert(BaseModel):
+    date: str
+    type: str
+    severity: str
+    message: str
+
+
+class WeatherForecastResponse(BaseModel):
+    location: LocationInfo
+    timezone: str | None = None
+    daily: list[DailyForecast]
+
+
+class WeatherAlertsResponse(BaseModel):
+    location: LocationInfo
+    alerts: list[WeatherAlert]

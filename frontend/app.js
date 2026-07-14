@@ -4,6 +4,8 @@ const diseaseForm = document.getElementById("disease-form");
 const diseaseResult = document.getElementById("disease-result");
 const yieldForm = document.getElementById("yield-form");
 const yieldResult = document.getElementById("yield-result");
+const weatherForm = document.getElementById("weather-form");
+const weatherResult = document.getElementById("weather-result");
 
 function setLoading(el, isLoading) {
   const btn = el.querySelector("button");
@@ -114,5 +116,39 @@ yieldForm.addEventListener("submit", async (e) => {
     yieldResult.innerHTML = `<p class="error">${err.message}</p>`;
   } finally {
     setLoading(yieldForm, false);
+  }
+});
+
+weatherForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  weatherResult.innerHTML = "Fetching forecast…";
+  setLoading(weatherForm, true);
+
+  const formData = new FormData(weatherForm);
+  const params = new URLSearchParams({
+    location: formData.get("location"),
+    days: formData.get("days"),
+  });
+
+  try {
+    const res = await fetch(`/api/weather/alerts?${params}`);
+    if (!res.ok) throw new Error((await res.json()).detail || "Request failed");
+    const data = await res.json();
+
+    const alertItems = data.alerts.length
+      ? data.alerts
+          .map((a) => `<li><strong>${a.date}</strong> — [${a.severity}] ${a.message}</li>`)
+          .join("")
+      : "<li>No weather alerts for this period.</li>";
+
+    weatherResult.innerHTML = `
+      <div class="result-box">
+        <strong>${data.location.name}${data.location.country ? ", " + data.location.country : ""}</strong>
+        <ul class="alt-list" style="display:block">${alertItems}</ul>
+      </div>`;
+  } catch (err) {
+    weatherResult.innerHTML = `<p class="error">${err.message}</p>`;
+  } finally {
+    setLoading(weatherForm, false);
   }
 });

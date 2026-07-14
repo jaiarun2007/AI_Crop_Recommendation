@@ -57,10 +57,23 @@
       </form>
       <div id="yield-result" class="result"></div>
     </section>
+
+    <section class="card">
+      <h2>4. Weather Intelligence</h2>
+      <p class="hint">Live forecast + rule-based agro-alerts (heatwave, heavy rain, high wind, dry spell) from Open-Meteo.</p>
+      <form id="weather-form">
+        <div class="grid">
+          <label>Location <input type="text" name="location" value="Coimbatore" required /></label>
+          <label>Forecast days <input type="number" name="days" value="7" min="1" max="16" required /></label>
+        </div>
+        <button type="submit">Get Forecast &amp; Alerts</button>
+      </form>
+      <div id="weather-result" class="result"></div>
+    </section>
   </main>
 
   <footer>
-    <p>Backend: FastAPI · Crop &amp; yield models: trained on real public datasets (NPK/climate + FAO yield data) · Disease screening: OpenCV colour-heuristic baseline</p>
+    <p>Backend: FastAPI · Crop &amp; yield models: trained on real public datasets (NPK/climate + FAO yield data) · Disease screening: OpenCV colour-heuristic baseline · Weather: live Open-Meteo forecasts</p>
   </footer>
 
   <script src="app.js"></script>
