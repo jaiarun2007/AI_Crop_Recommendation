@@ -9,7 +9,7 @@
 <body>
   <header>
     <h1>🌾 AI-Based Crop Recommendation &amp; Climate-Adaptive Farming Assistant</h1>
-    <p class="subtitle">Demo prototype — crop recommendation, leaf health screening &amp; yield prediction</p>
+    <p class="subtitle">Demo prototype — crop, disease, yield, weather &amp; fertilizer intelligence</p>
   </header>
 
   <main>
@@ -70,10 +70,26 @@
       </form>
       <div id="weather-result" class="result"></div>
     </section>
+
+    <section class="card">
+      <h2>5. Fertilizer Recommendation</h2>
+      <p class="hint">N-P-K balancing against ideal crop nutrient targets, with real fertilizer-product dosing.</p>
+      <form id="fertilizer-form">
+        <div class="grid">
+          <label>Crop <input type="text" name="crop" value="rice" required /></label>
+          <label>Soil N (kg/ha) <input type="number" step="any" name="N" value="20" required /></label>
+          <label>Soil P (kg/ha) <input type="number" step="any" name="P" value="40" required /></label>
+          <label>Soil K (kg/ha) <input type="number" step="any" name="K" value="40" required /></label>
+          <label>Soil pH <input type="number" step="any" name="ph" value="5.5" required /></label>
+        </div>
+        <button type="submit">Get Fertilizer Advice</button>
+      </form>
+      <div id="fertilizer-result" class="result"></div>
+    </section>
   </main>
 
   <footer>
-    <p>Backend: FastAPI · Crop &amp; yield models: trained on real public datasets (NPK/climate + FAO yield data) · Disease screening: OpenCV colour-heuristic baseline · Weather: live Open-Meteo forecasts</p>
+    <p>Backend: FastAPI · Crop &amp; yield models: trained on real public datasets (NPK/climate + FAO yield data) · Disease screening: OpenCV colour-heuristic baseline · Weather: live Open-Meteo forecasts · Fertilizer: rule-based N-P-K balancing</p>
   </footer>
 
   <script src="app.js"></script>

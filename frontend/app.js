@@ -6,6 +6,8 @@ const yieldForm = document.getElementById("yield-form");
 const yieldResult = document.getElementById("yield-result");
 const weatherForm = document.getElementById("weather-form");
 const weatherResult = document.getElementById("weather-result");
+const fertilizerForm = document.getElementById("fertilizer-form");
+const fertilizerResult = document.getElementById("fertilizer-result");
 
 function setLoading(el, isLoading) {
   const btn = el.querySelector("button");
@@ -150,5 +152,49 @@ weatherForm.addEventListener("submit", async (e) => {
     weatherResult.innerHTML = `<p class="error">${err.message}</p>`;
   } finally {
     setLoading(weatherForm, false);
+  }
+});
+
+fertilizerForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  fertilizerResult.innerHTML = "Calculating…";
+  setLoading(fertilizerForm, true);
+
+  const formData = new FormData(fertilizerForm);
+  const payload = Object.fromEntries(formData.entries());
+  payload.N = Number(payload.N);
+  payload.P = Number(payload.P);
+  payload.K = Number(payload.K);
+  payload.ph = Number(payload.ph);
+
+  try {
+    const res = await fetch("/api/fertilizer/recommend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || "Request failed");
+    const data = await res.json();
+
+    const nutrientItems = data.nutrients
+      .map((n) => {
+        if (n.status === "deficient") {
+          return `<li><span>${n.nutrient}: deficient (${n.delta_kg_ha} kg/ha short)</span><span>${n.recommended_product} — ${n.recommended_dose_kg_ha} kg/ha</span></li>`;
+        }
+        return `<li><span>${n.nutrient}: ${n.status}</span><span>${n.delta_kg_ha} kg/ha</span></li>`;
+      })
+      .join("");
+
+    fertilizerResult.innerHTML = `
+      <div class="result-box">
+        <strong>Fertilizer plan for ${data.crop}</strong>
+        <ul class="alt-list">${nutrientItems}</ul>
+        <p>${data.ph_advice.message}</p>
+        <p class="hint">${data.disclaimer}</p>
+      </div>`;
+  } catch (err) {
+    fertilizerResult.innerHTML = `<p class="error">${err.message}</p>`;
+  } finally {
+    setLoading(fertilizerForm, false);
   }
 });

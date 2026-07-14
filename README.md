@@ -63,15 +63,18 @@ backend/
     routers/disease.py         POST /api/disease/detect
     routers/yield_.py          POST /api/yield/predict, GET /api/yield/known-values
     routers/weather.py         GET /api/weather/forecast, GET /api/weather/alerts
+    routers/fertilizer.py      POST /api/fertilizer/recommend, GET /api/fertilizer/known-crops
     services/crop_recommender.py
     services/disease_detector.py
     services/yield_predictor.py
     services/weather_client.py     Raw Open-Meteo HTTP calls
     services/weather_service.py    Forecast parsing + alert-threshold logic
+    services/fertilizer_service.py N-P-K balancing against per-crop ideal targets
   ml/
     train_crop_model.py        Trains + compares RF/XGBoost/LightGBM, saves the best
     train_yield_model.py       Trains + compares RF/XGBoost regressors, saves the best
     data/crop_recommendation.csv
+    data/fertilizer_reference.csv  Per-crop ideal N/P/K/pH targets (Harvestify project data)
     data/yield_df.csv
     models/                    Saved model artifacts (committed so it runs out of the box)
   tests/
@@ -79,6 +82,7 @@ backend/
     test_disease_api.py
     test_yield_api.py
     test_weather_api.py
+    test_fertilizer_api.py
 frontend/
   index.html / app.js / styles.css   Minimal UI calling all endpoints
 scripts/run_dev.sh              One-command local run
@@ -199,11 +203,36 @@ useful for populating a dropdown instead of free-text input.
 }
 ```
 
+### `POST /api/fertilizer/recommend`
+
+```json
+{"crop": "rice", "N": 20, "P": 40, "K": 40, "ph": 5.5}
+```
+
+→
+
+```json
+{
+  "crop": "rice",
+  "ideal_reference": {"N": 80.0, "P": 40.0, "K": 40.0, "pH": 5.5, "soil_moisture": 30.0},
+  "nutrients": [
+    {"nutrient": "N", "status": "deficient", "delta_kg_ha": 60.0,
+     "recommended_product": "Urea", "recommended_dose_kg_ha": 130.4},
+    {"nutrient": "P", "status": "adequate", "delta_kg_ha": 0.0},
+    {"nutrient": "K", "status": "adequate", "delta_kg_ha": 0.0}
+  ],
+  "ph_advice": {"status": "adequate", "message": "Soil pH 5.5 is close to ideal (5.5)."},
+  "disclaimer": "Simplified elemental N-P-K balance for advisory purposes; ..."
+}
+```
+
+`GET /api/fertilizer/known-crops` lists the 22 crops with reference nutrient targets.
+
 ## Relationship to the full platform vision
 
 This repo is a focused slice of the much larger microservices platform described in
-`Executive_Summary_2.pdf` (10+ services: auth, soil health, fertilizer/irrigation engines, a
-multilingual RAG assistant, Kubernetes deployment, etc.). Building all of that is a
-multi-week/production effort; this prototype exists to give the team something real and runnable
-to demo today. Remaining slices, in priority order: fertilizer engine, irrigation engine, RAG
-assistant, auth, and Docker/Kubernetes deployment manifests.
+`Executive_Summary_2.pdf` (10+ services: auth, soil health, irrigation engine, a multilingual
+RAG assistant, Kubernetes deployment, etc.). Building all of that is a multi-week/production
+effort; this prototype exists to give the team something real and runnable to demo today.
+Remaining slices, in priority order: irrigation engine, RAG assistant, auth, and Docker/Kubernetes
+deployment manifests.

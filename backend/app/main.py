@@ -2,16 +2,16 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.routers import crop, disease, weather, yield_
+from app.routers import crop, disease, fertilizer, weather, yield_
 
 app = FastAPI(
     title="AI Crop Recommendation & Climate-Adaptive Farming Assistant",
     description=(
         "Demo API: crop recommendation (ML), leaf disease screening (CV heuristic), "
-        "yield prediction (ML), and weather intelligence (live Open-Meteo forecasts + "
-        "rule-based agro-alerts)."
+        "yield prediction (ML), weather intelligence (live Open-Meteo forecasts + "
+        "rule-based agro-alerts), and a fertilizer N-P-K balancing engine."
     ),
-    version="0.3.0",
+    version="0.4.0",
 )
 
 app.add_middleware(
@@ -25,6 +25,7 @@ app.include_router(crop.router)
 app.include_router(disease.router)
 app.include_router(yield_.router)
 app.include_router(weather.router)
+app.include_router(fertilizer.router)
 
 
 @app.get("/api/health")

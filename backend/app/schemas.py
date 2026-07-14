@@ -114,3 +114,42 @@ class WeatherForecastResponse(BaseModel):
 class WeatherAlertsResponse(BaseModel):
     location: LocationInfo
     alerts: list[WeatherAlert]
+
+
+# --- Fertilizer Recommendation Engine ---
+
+
+class FertilizerRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {"crop": "rice", "N": 40, "P": 20, "K": 15, "ph": 6.0}
+        }
+    )
+
+    crop: str = Field(..., description="Crop name, e.g. 'rice' (see /api/fertilizer/known-crops)")
+    N: float = Field(..., ge=0, le=300, description="Current soil Nitrogen (kg/ha)")
+    P: float = Field(..., ge=0, le=300, description="Current soil Phosphorus (kg/ha)")
+    K: float = Field(..., ge=0, le=300, description="Current soil Potassium (kg/ha)")
+    ph: float = Field(..., ge=0, le=14, description="Current soil pH")
+
+
+class NutrientAdvice(BaseModel):
+    nutrient: str
+    status: str
+    delta_kg_ha: float
+    recommended_product: str | None = None
+    recommended_dose_kg_ha: float | None = None
+    note: str | None = None
+
+
+class PHAdvice(BaseModel):
+    status: str
+    message: str
+
+
+class FertilizerResponse(BaseModel):
+    crop: str
+    ideal_reference: dict
+    nutrients: list[NutrientAdvice]
+    ph_advice: PHAdvice
+    disclaimer: str
