@@ -121,10 +121,27 @@
       </form>
       <div id="assistant-result" class="result"></div>
     </section>
+
+    <section class="card">
+      <h2>8. Account</h2>
+      <p class="hint">JWT authentication backed by a real SQLite user table (bcrypt-hashed passwords).</p>
+      <form id="auth-form">
+        <div class="grid">
+          <label>Email <input type="text" name="email" placeholder="farmer@example.com" required /></label>
+          <label>Password <input type="password" name="password" placeholder="min 8 characters" required minlength="8" /></label>
+          <label>Full name (register only) <input type="text" name="full_name" placeholder="optional" /></label>
+        </div>
+        <button type="submit" formnovalidate data-action="login">Log In</button>
+        <button type="submit" formnovalidate data-action="register">Register</button>
+        <button type="button" id="whoami-btn">Who am I?</button>
+        <button type="button" id="logout-btn">Log Out</button>
+      </form>
+      <div id="auth-result" class="result"></div>
+    </section>
   </main>
 
   <footer>
-    <p>Backend: FastAPI · Crop &amp; yield models: trained on real public datasets (NPK/climate + FAO yield data) · Disease screening: OpenCV colour-heuristic baseline · Weather: live Open-Meteo forecasts · Fertilizer: rule-based N-P-K balancing · Irrigation: FAO-56 crop-coefficient method · Assistant: TF-IDF RAG over project docs</p>
+    <p>Backend: FastAPI · Crop &amp; yield models: trained on real public datasets (NPK/climate + FAO yield data) · Disease screening: OpenCV colour-heuristic baseline · Weather: live Open-Meteo forecasts · Fertilizer: rule-based N-P-K balancing · Irrigation: FAO-56 crop-coefficient method · Assistant: TF-IDF RAG over project docs · Auth: JWT + bcrypt over SQLite</p>
   </footer>
 
   <script src="app.js"></script>

@@ -275,3 +275,57 @@ assistantForm.addEventListener("submit", async (e) => {
     setLoading(assistantForm, false);
   }
 });
+
+const authForm = document.getElementById("auth-form");
+const authResult = document.getElementById("auth-result");
+const whoamiBtn = document.getElementById("whoami-btn");
+const logoutBtn = document.getElementById("logout-btn");
+const TOKEN_KEY = "farming_assistant_token";
+
+async function submitAuth(action) {
+  authResult.innerHTML = action === "login" ? "Logging in…" : "Registering…";
+  const formData = new FormData(authForm);
+  const payload = { email: formData.get("email"), password: formData.get("password") };
+  if (action === "register") payload.full_name = formData.get("full_name") || null;
+
+  try {
+    const res = await fetch(`/api/auth/${action}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || "Request failed");
+    const data = await res.json();
+    localStorage.setItem(TOKEN_KEY, data.access_token);
+    authResult.innerHTML = `<div class="result-box">Logged in as <strong>${data.user.email}</strong>. Token stored.</div>`;
+  } catch (err) {
+    authResult.innerHTML = `<p class="error">${err.message}</p>`;
+  }
+}
+
+authForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const action = e.submitter?.dataset.action || "login";
+  submitAuth(action);
+});
+
+whoamiBtn.addEventListener("click", async () => {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) {
+    authResult.innerHTML = `<p class="error">No token stored — log in or register first.</p>`;
+    return;
+  }
+  try {
+    const res = await fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error((await res.json()).detail || "Request failed");
+    const data = await res.json();
+    authResult.innerHTML = `<div class="result-box">You are <strong>${data.email}</strong> (id ${data.id}${data.full_name ? ", " + data.full_name : ""}).</div>`;
+  } catch (err) {
+    authResult.innerHTML = `<p class="error">${err.message}</p>`;
+  }
+});
+
+logoutBtn.addEventListener("click", () => {
+  localStorage.removeItem(TOKEN_KEY);
+  authResult.innerHTML = `<div class="result-box">Logged out (token cleared).</div>`;
+});

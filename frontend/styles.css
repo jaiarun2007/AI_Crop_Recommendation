@@ -58,6 +58,9 @@ button {
 }
 button:hover { background: var(--green-dark); }
 button:disabled { opacity: 0.6; cursor: wait; }
+button + button { margin-left: 0.5rem; }
+button[type="button"] { background: #607d8b; }
+button[type="button"]:hover { background: #455a64; }
 
 .result { margin-top: 1rem; min-height: 1.5rem; }
 .result .error { color: #c62828; }

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class SoilClimateInput(BaseModel):
@@ -231,3 +231,39 @@ class AssistantQueryResponse(BaseModel):
     answer: str
     mode: str
     sources: list[AssistantSource]
+
+
+# --- Authentication ---
+
+
+class UserRegisterRequest(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "email": "farmer@example.com",
+                "password": "a-strong-password",
+                "full_name": "Example Farmer",
+            }
+        }
+    )
+
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=72)
+    full_name: str | None = Field(None, max_length=200)
+
+
+class UserLoginRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=1, max_length=72)
+
+
+class UserResponse(BaseModel):
+    id: int
+    email: str
+    full_name: str | None = None
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse

@@ -17,6 +17,8 @@ Executive Summary and Production Blueprint deck:
    live rainfall forecast, producing a day-by-day irrigation plan.
 7. **AI Assistant (RAG)** — retrieval-augmented Q&A grounded in the team's own project
    documents (Executive Summary, finalist guidelines, presentation deck, pitch strategy).
+8. **Authentication** — JWT login/register backed by a real SQLite user table with
+   bcrypt-hashed passwords.
 
 A minimal web front-end calls all of these APIs so the whole thing is demoable in a browser.
 
@@ -88,6 +90,11 @@ would misrepresent the work.
   knowledge base is a **curated** version keeping only the architecture/tech-stack table and
   general pitch-structure guidance from that source, with an explicit note in the file itself
   about what was omitted and why.
+- **Authentication is a real JWT flow**, not a stub: passwords are hashed with bcrypt (never
+  stored or returned in plaintext), users persist in a real SQLite table (SQLAlchemy ORM), and
+  `/api/auth/me` validates a real signed JWT (HS256) against that table on every call. Set
+  `JWT_SECRET_KEY` in the environment before any real deployment — the default in `config.py` is
+  explicitly a dev-only placeholder.
 
 ## Project layout
 
@@ -104,6 +111,7 @@ backend/
     routers/fertilizer.py      POST /api/fertilizer/recommend, GET /api/fertilizer/known-crops
     routers/irrigation.py      POST /api/irrigation/schedule, GET /api/irrigation/known-crops
     routers/assistant.py       POST /api/assistant/query, GET /api/assistant/documents
+    routers/auth.py            POST /api/auth/register, POST /api/auth/login, GET /api/auth/me
     services/crop_recommender.py
     services/disease_detector.py
     services/yield_predictor.py
@@ -112,7 +120,10 @@ backend/
     services/fertilizer_service.py N-P-K balancing against per-crop ideal targets
     services/irrigation_service.py FAO-56 ETc calculation + irrigation-plan logic
     services/rag_service.py        TF-IDF retrieval + optional LLM synthesis
+    services/auth_service.py       bcrypt hashing + JWT creation/verification
     knowledge_base/*.md        Materialized project documents (the RAG corpus)
+    database.py                 SQLAlchemy engine/session setup
+    models.py                   SQLAlchemy User model
   ml/
     train_crop_model.py        Trains + compares RF/XGBoost/LightGBM, saves the best
     train_yield_model.py       Trains + compares RF/XGBoost regressors, saves the best
@@ -129,6 +140,7 @@ backend/
     test_irrigation_service.py
     test_irrigation_api.py
     test_assistant_api.py
+    test_auth_api.py
 frontend/
   index.html / app.js / styles.css   Minimal UI calling all endpoints
 scripts/run_dev.sh              One-command local run
@@ -322,10 +334,31 @@ Set `ANTHROPIC_API_KEY` in the environment to switch `mode` to `"llm"` (falls ba
 extractive automatically if the key is absent or the call fails). `GET /api/assistant/documents`
 lists the four indexed source documents.
 
+### `POST /api/auth/register`
+
+```json
+{"email": "farmer@example.com", "password": "a-strong-password", "full_name": "Example Farmer"}
+```
+
+→ `201` with `{"access_token": "...", "token_type": "bearer", "user": {"id": 1, "email": "...", "full_name": "..."}}`.
+`409` if the email is already registered; `422` if the password is under 8 characters.
+
+### `POST /api/auth/login`
+
+```json
+{"email": "farmer@example.com", "password": "a-strong-password"}
+```
+
+→ same token shape as register, or `401` on wrong credentials.
+
+### `GET /api/auth/me`
+
+Requires `Authorization: Bearer <token>`. Returns the current user, or `401`/`403` if the token
+is missing, invalid, or expired.
+
 ## Relationship to the full platform vision
 
 This repo is a focused slice of the much larger microservices platform described in
-`Executive_Summary_2.pdf` (10+ services: auth, soil health, Kubernetes deployment, etc.).
-Building all of that is a multi-week/production effort; this prototype exists to give the team
-something real and runnable to demo today. Remaining slices, in priority order: user
-authentication (JWT), and Docker/Kubernetes deployment manifests.
+`Executive_Summary_2.pdf` (10+ services: soil health, Kubernetes deployment, etc.). Building all
+of that is a multi-week/production effort; this prototype exists to give the team something real
+and runnable to demo today. Remaining slice: Docker/Kubernetes deployment manifests.
