@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: farming-assistant
+  namespace: ai-crop-recommendation
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - farming-assistant.example.com # replace with a real domain
+      secretName: farming-assistant-tls
+  rules:
+    - host: farming-assistant.example.com # replace with a real domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: farming-assistant
+                port:
+                  number: 80

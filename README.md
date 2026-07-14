@@ -144,6 +144,9 @@ backend/
 frontend/
   index.html / app.js / styles.css   Minimal UI calling all endpoints
 scripts/run_dev.sh              One-command local run
+Dockerfile / .dockerignore
+docker-compose.yml / .env.example
+k8s/                             Kubernetes manifests (see k8s/README.md)
 ```
 
 ## Running it locally
@@ -356,9 +359,28 @@ lists the four indexed source documents.
 Requires `Authorization: Bearer <token>`. Returns the current user, or `401`/`403` if the token
 is missing, invalid, or expired.
 
+## Docker & Kubernetes
+
+```bash
+cp .env.example .env   # fill in a real JWT_SECRET_KEY (see the comment in the file)
+docker compose up --build
+```
+
+Kubernetes manifests are in `k8s/` (namespace, configmap, secret template, PVC, deployment,
+service, ingress, HPA) — see `k8s/README.md` for apply instructions and an important caveat:
+the default SQLite database only supports a single replica safely (documented there, not
+glossed over). **Neither the Docker build nor the Kubernetes manifests could be fully verified
+live in this sandbox** — its network policy blocks pulling the `python:3.11-slim` base image
+from Docker Hub (same class of restriction as the weather API), and no Kubernetes cluster is
+available here. The `Dockerfile`/`docker-compose.yml`/`k8s/*.yaml` all parse correctly and
+follow standard patterns, but run `docker compose up --build` and
+`kubectl apply --dry-run=client -f k8s/` yourself in an environment with normal registry/cluster
+access before relying on them for the real deployment.
+
 ## Relationship to the full platform vision
 
 This repo is a focused slice of the much larger microservices platform described in
-`Executive_Summary_2.pdf` (10+ services: soil health, Kubernetes deployment, etc.). Building all
-of that is a multi-week/production effort; this prototype exists to give the team something real
-and runnable to demo today. Remaining slice: Docker/Kubernetes deployment manifests.
+`Executive_Summary_2.pdf` (10+ services, full Kubernetes multi-service deployment, etc.).
+Building all of that is a multi-week/production effort; this prototype — one containerized
+FastAPI app exposing eight real, working capabilities — exists to give the team something real
+and runnable to demo today.

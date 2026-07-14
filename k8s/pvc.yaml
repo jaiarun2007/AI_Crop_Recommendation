@@ -1,0 +1,17 @@
+# Persists the SQLite database file. NOTE: SQLite + a ReadWriteOnce PVC only works
+# safely with a single pod replica -- multiple pods writing to the same SQLite file
+# concurrently will corrupt it. Keep `replicas: 1` in deployment.yaml unless/until
+# DATABASE_URL is switched to a real multi-writer database (e.g. managed PostgreSQL,
+# as recommended in the Executive Summary), at which point this PVC is unneeded and
+# HPA scaling above 1 replica becomes safe.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: farming-assistant-db
+  namespace: ai-crop-recommendation
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

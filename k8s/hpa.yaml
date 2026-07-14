@@ -1,0 +1,21 @@
+# Only takes effect once replicas can safely exceed 1 -- i.e. after switching off
+# SQLite (see pvc.yaml). Included now so the scaling policy is defined and ready.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: farming-assistant
+  namespace: ai-crop-recommendation
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: farming-assistant
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

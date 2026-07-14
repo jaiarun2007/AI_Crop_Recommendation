@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: farming-assistant
+  namespace: ai-crop-recommendation
+  labels:
+    app: farming-assistant
+spec:
+  # See pvc.yaml: keep this at 1 while backed by SQLite.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: farming-assistant
+  template:
+    metadata:
+      labels:
+        app: farming-assistant
+    spec:
+      containers:
+        - name: farming-assistant
+          image: ai-crop-recommendation:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: farming-assistant-config
+            - secretRef:
+                name: farming-assistant-secrets
+          volumeMounts:
+            - name: db-storage
+              mountPath: /data
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+      volumes:
+        - name: db-storage
+          persistentVolumeClaim:
+            claimName: farming-assistant-db
